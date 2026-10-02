@@ -1,5 +1,10 @@
 // Injects the shared navbar + footer so markup lives in one place.
 (function () {
+  if (window.location.protocol === 'file:') {
+    window.location.href = 'http://localhost:5000/';
+    return;
+  }
+
   const page = location.pathname.split('/').pop() || 'index.html';
 
   function navLink(href, label) {
@@ -37,8 +42,8 @@
       <div class="container-fluid px-0">
         <nav class="navbar navbar-expand-lg navbar-light py-3">
           <a class="navbar-brand pl-lg-4" href="index.html">FashionHub</a>
-          <span class="ml-2 text-muted small">Owner: Kharanshu Sekhar Das</span>
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nav"
+          <span class="owner-tag ml-2 text-muted small d-none d-lg-inline">Owner: Kharanshu Sekhar Das</span>
+          <button class="navbar-toggler ml-auto" type="button" data-toggle="collapse" data-target="#nav"
             aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
