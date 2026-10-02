@@ -601,3 +601,56 @@ main, .page-fade { animation: fadeIn 0.5s ease both; position: relative; z-index
   .department-grid { grid-template-columns: 1fr; }
   .navbar-brand { font-size: 2.2rem; }
 }
+
+/* ---------------------------- Home landing ----------------------------- */
+.home-hero { padding-top: 0.5rem; }
+.home-hero-frame { overflow: hidden; border-radius: 28px; background: var(--dark); box-shadow: var(--shadow-lg); }
+.home-hero-frame .carousel-item { height: min(72vh, 720px); min-height: 540px; }
+.home-hero-frame .carousel-item img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.62); }
+.home-hero-frame .carousel-caption { left: 8%; right: 8%; bottom: 20%; max-width: 760px; text-align: left; }
+.home-hero-frame .carousel-caption h1,
+.home-hero-frame .carousel-caption h5 { color: #fff; font-size: clamp(2.8rem, 6vw, 5.8rem); font-weight: 800; line-height: 0.98; text-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+.home-hero-frame .carousel-caption h1 span { color: #f9a8d4; }
+.home-hero-frame .carousel-caption p { max-width: 590px; color: rgba(255,255,255,0.9); font-size: clamp(1rem, 1.5vw, 1.2rem); }
+.home-eyebrow { display: inline-block; margin-bottom: 1rem; padding: 0.5rem 0.9rem; color: #fff; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; backdrop-filter: blur(8px); font-size: 0.85rem; }
+.home-text-link { color: var(--primary); font-weight: 600; }
+.home-hero-frame .home-text-link { color: #fff; }
+.home-trust-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem 3rem; padding: 1.2rem 0; color: var(--muted); }
+.home-trust-row div { display: flex; align-items: center; gap: 0.6rem; }
+.home-trust-row i { color: var(--primary); }
+.home-section-heading h2 { margin: 0.2rem 0; font-weight: 700; font-size: clamp(1.7rem, 3vw, 2.35rem); }
+.home-section-heading p { margin: 0; color: var(--muted); }
+.home-kicker { color: var(--primary); font-size: 0.76rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+.home-featured-section .single_product { border: 1px solid rgba(109,40,217,0.06); }
+.home-closer { position: relative; display: flex; min-height: 300px; align-items: center; overflow: hidden; padding: 3.5rem 5%; color: #fff; background: var(--gradient); border-radius: 28px; }
+.home-closer-copy { position: relative; z-index: 1; max-width: 590px; }
+.home-closer .home-kicker { color: rgba(255,255,255,0.78); }
+.home-closer h2 { margin: 0.5rem 0; font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 700; }
+.home-closer p { color: rgba(255,255,255,0.86); }
+.home-closer .btn-primary { color: var(--primary-dark); background: #fff; box-shadow: none; }
+.home-closer-art { position: absolute; right: 9%; top: 50%; color: rgba(255,255,255,0.2); font-size: clamp(8rem, 20vw, 17rem); transform: translateY(-50%) rotate(-12deg); }
+.home-closer-art span { position: absolute; display: block; width: 0.5em; height: 0.5em; border: 2px solid rgba(255,255,255,0.26); border-radius: 50%; }
+.home-closer-art span:first-of-type { top: 0; left: -0.5em; }
+.home-closer-art span:last-of-type { right: -0.35em; bottom: 0.1em; width: 0.25em; height: 0.25em; }
+
+@media (max-width: 768px) {
+  .home-hero-frame { border-radius: 20px; }
+  .home-hero-frame .carousel-item { height: 62vh; min-height: 470px; }
+  .home-hero-frame .carousel-caption { left: 7%; right: 7%; bottom: 14%; }
+  .home-trust-row { justify-content: flex-start; gap: 0.8rem 1.5rem; padding-left: 0.5rem; font-size: 0.85rem; }
+  .home-closer { min-height: 280px; border-radius: 20px; }
+  .home-closer-art { right: -4%; opacity: 0.65; }
+}
+
+@media (max-width: 575px) {
+  .home-hero { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .home-hero-frame .carousel-item { height: 68vh; min-height: 500px; }
+  .home-hero-frame .carousel-caption { left: 1.25rem; right: 1.25rem; bottom: 12%; }
+  .home-hero-frame .carousel-caption h1,
+  .home-hero-frame .carousel-caption h5 { font-size: clamp(2.7rem, 12vw, 4rem); }
+  .home-hero-frame .carousel-caption .btn { padding: 0.75rem 1.1rem; font-size: 0.9rem; }
+  .home-trust-row { display: grid; grid-template-columns: 1fr 1fr; }
+  .home-trust-row div:last-child { grid-column: 1 / -1; }
+  .home-section-heading { align-items: flex-start !important; }
+  .home-closer { margin-left: 0.75rem !important; margin-right: 0.75rem !important; padding: 2.5rem 1.5rem; }
+}
