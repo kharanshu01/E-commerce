@@ -36,7 +36,8 @@ app.use(express.static(frontendDir));
 
 // Any non-API GET falls back to the frontend (nice for direct links).
 app.get(/^\/(?!api).*/, (req, res, next) => {
-  res.sendFile(path.join(frontendDir, 'index.html'), (err) => (err ? next() : null));
+  // The frontend has no index.html; use the existing shop page as the landing page.
+  res.sendFile(path.join(frontendDir, 'product.html'), (err) => (err ? next() : null));
 });
 
 /* ---------------------------- Error handling ------------------------------ */
