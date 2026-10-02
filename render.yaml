@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: fashionhub
+    runtime: node
+    plan: free
+    buildCommand: npm install --prefix backend
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: MONGODB_URI
+        sync: false
