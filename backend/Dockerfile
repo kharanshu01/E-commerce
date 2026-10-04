@@ -7,12 +7,10 @@ WORKDIR /app/backend
 
 # Install only production dependencies. The in-memory MongoDB package is a
 # runtime dependency because the server can fall back to it when MongoDB is unavailable.
-COPY backend/package*.json ./
+COPY package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
 
-COPY backend/ ./
-# The Express server also serves the frontend from ../frontend.
-COPY frontend/ /app/frontend/
+COPY . ./
 
 USER node
 
