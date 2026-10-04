@@ -21,6 +21,7 @@
           <div class="col-lg-8 mb-4">
             <div class="order-summary" style="position:static">
               <h5 class="mb-4"><i class="fas fa-truck mr-2 text-gradient"></i>Shipping Details</h5>
+              <div class="form-group"><label for="saved-address">Use a saved address</label><select id="saved-address" class="form-control"><option value="">Enter a new address</option></select></div>
               <div class="form-row">
                 <div class="form-group col-md-6"><label>First name *</label><input name="firstName" class="form-control" required></div>
                 <div class="form-group col-md-6"><label>Last name *</label><input name="lastName" class="form-control" required></div>
@@ -41,11 +42,12 @@
                 </div>
               </div>
               <div class="form-group"><label>Order notes</label><textarea name="notes" rows="2" class="form-control"></textarea></div>
+              <div class="form-check mb-4"><input class="form-check-input" type="checkbox" id="save-address"><label class="form-check-label" for="save-address">Save this address to my account</label></div>
 
-              <h5 class="mb-3 mt-4"><i class="fas fa-credit-card mr-2 text-gradient"></i>Payment (Demo)</h5>
-              <div class="alert alert-info"><i class="fas fa-info-circle mr-2"></i>This is a simulated payment for demonstration — no real card is charged.</div>
-              <div class="form-check mb-2"><input class="form-check-input" type="radio" name="pay" id="pay1" checked><label class="form-check-label" for="pay1">Cash on Delivery</label></div>
-              <div class="form-check"><input class="form-check-input" type="radio" name="pay" id="pay2"><label class="form-check-label" for="pay2">Card (Simulated)</label></div>
+              <h5 class="mb-3 mt-4"><i class="fas fa-credit-card mr-2 text-gradient"></i>Payment</h5>
+              <div class="form-check mb-2"><input class="form-check-input" type="radio" name="paymentMethod" id="pay-cod" value="cod" checked><label class="form-check-label" for="pay-cod">Cash on Delivery</label></div>
+              <div class="form-check"><input class="form-check-input" type="radio" name="paymentMethod" id="pay-razorpay" value="razorpay"><label class="form-check-label" for="pay-razorpay">Pay online with Razorpay</label></div>
+              <small class="form-text text-muted" id="payment-help">Online payment appears when Razorpay has been configured by the store.</small>
             </div>
           </div>
           <div class="col-lg-4">
@@ -66,6 +68,7 @@
   <script src="js/cart.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/layout.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="js/checkout.js"></script>
 </body>
 </html>

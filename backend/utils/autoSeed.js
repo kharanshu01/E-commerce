@@ -25,19 +25,26 @@ module.exports = async function autoSeed() {
   const adminEmail = (process.env.ADMIN_EMAIL || 'admin@fashionhub.com').toLowerCase();
   const adminExists = await User.findOne({ email: adminEmail });
   if (!adminExists) {
-    await User.create({
-      name: process.env.ADMIN_NAME || 'Admin',
-      email: adminEmail,
-      password: process.env.ADMIN_PASSWORD || 'admin123',
-      role: 'admin',
-    });
-    console.log(`🌱 Auto-created admin account: ${adminEmail} / ${process.env.ADMIN_PASSWORD || 'admin123'}`);
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (process.env.NODE_ENV === 'production' && (!adminPassword || adminPassword.length < 12)) {
+      console.warn('⚠️  Admin account was not created; configure ADMIN_PASSWORD with at least 12 characters.');
+    } else {
+      await User.create({
+        name: process.env.ADMIN_NAME || 'Admin',
+        email: adminEmail,
+        password: adminPassword || 'admin123',
+        role: 'admin',
+      });
+      console.log(`🌱 Auto-created admin account: ${adminEmail}`);
+    }
   }
 
-  const demoExists = await User.findOne({ email: 'user@fashionhub.com' });
-  if (!demoExists) {
-    await User.create({ name: 'Demo User', email: 'user@fashionhub.com', password: 'user123', role: 'user' });
-    console.log('🌱 Auto-created demo user: user@fashionhub.com / user123');
+  if (process.env.NODE_ENV !== 'production') {
+    const demoExists = await User.findOne({ email: 'user@fashionhub.com' });
+    if (!demoExists) {
+      await User.create({ name: 'Demo User', email: 'user@fashionhub.com', password: 'user123', role: 'user' });
+      console.log('🌱 Auto-created demo user for local development.');
+    }
   }
 
   await Coupon.updateOne(

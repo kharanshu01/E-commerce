@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, admin } = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimits');
 const {
   register,
   login,
@@ -17,10 +18,10 @@ const {
   getUsers,
 } = require('../controllers/authController');
 
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', authLimiter, register);
+router.post('/login', authLimiter, login);
 router.get('/google/config', googleConfig);
-router.post('/google', googleLogin);
+router.post('/google', authLimiter, googleLogin);
 router.post('/logout', logout);
 router.get('/me', protect, me);
 router.get('/cart', protect, getCart);

@@ -29,6 +29,7 @@
         <div class="dropdown-menu dropdown-menu-right shadow">
           <h6 class="dropdown-header">${u.email}</h6>
           <a class="dropdown-item" href="orders.html"><i class="fas fa-box mr-2"></i>My Orders</a>
+          <a class="dropdown-item" href="wishlist.html"><i class="fas fa-heart mr-2"></i>Wishlist</a>
           ${adminLink}
           <div class="dropdown-divider"></div>
           <a class="dropdown-item text-danger" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>

@@ -11,6 +11,11 @@ const mongoose = require('mongoose');
  */
 async function connectDB() {
   const forceMemory = String(process.env.USE_MEMORY_DB).toLowerCase() === 'true';
+  const production = process.env.NODE_ENV === 'production';
+
+  if (production && (forceMemory || !process.env.MONGO_URI)) {
+    throw new Error('A persistent MongoDB MONGO_URI is required in production.');
+  }
 
   if (!forceMemory) {
     try {
@@ -20,8 +25,9 @@ async function connectDB() {
       console.log(`✅ MongoDB connected: ${conn.connection.host}/${conn.connection.name}`);
       return conn;
     } catch (err) {
-      console.warn(`⚠️  Could not reach MongoDB at ${process.env.MONGO_URI}`);
+      console.warn('⚠️  Could not connect to the configured MongoDB database.');
       console.warn(`    (${err.message})`);
+      if (production) throw err;
       console.warn('    Falling back to an in-memory database for this session.');
     }
   }

@@ -13,13 +13,13 @@
         <div class="col-lg-8 text-center">
           <img src="assets/images/success_tick.svg" alt="Success" width="120" class="mb-4" style="animation:pulse 1s ease">
           <h2 class="mb-2">Thank you for your purchase! 🎉</h2>
-          <p class="text-muted">A confirmation has been sent to <strong>${o.shipping.email || ''}</strong></p>
+          <p class="text-muted">Order details for <strong>${o.shipping.email || ''}</strong></p>
 
           <div class="order-summary text-left mt-4" style="position:static">
             <div class="d-flex justify-content-between flex-wrap mb-3">
               <div><small class="text-muted d-block">Order No.</small><strong>#${o._id.slice(-8).toUpperCase()}</strong></div>
               <div><small class="text-muted d-block">Date</small><strong>${date}</strong></div>
-              <div><small class="text-muted d-block">Payment</small><strong class="text-success">Paid</strong></div>
+              <div><small class="text-muted d-block">Payment</small><strong class="${o.isPaid ? 'text-success' : 'text-warning'}">${o.isPaid ? 'Paid' : o.paymentMethod + ' · ' + o.paymentStatus}</strong></div>
               <div><small class="text-muted d-block">Status</small><span class="badge badge-status status-${o.status}">${o.status}</span></div>
             </div>
             <hr>
@@ -34,6 +34,7 @@
             <div class="d-flex justify-content-between mb-2"><span>Tax</span><span>${window.fmt(o.taxPrice)}</span></div>
             <div class="d-flex justify-content-between mb-2"><span>Shipping</span><span>${o.shippingPrice === 0 ? 'FREE' : window.fmt(o.shippingPrice)}</span></div>
             <div class="d-flex justify-content-between"><strong>Total</strong><strong class="text-gradient" style="font-size:1.2rem">${window.fmt(o.totalPrice)}</strong></div>
+            <hr><p class="small text-muted mb-1"><i class="fas fa-truck mr-1"></i>Estimated delivery: 3–5 business days</p>${o.trackingNumber ? `<p class="small text-muted mb-0">Tracking: ${o.trackingNumber}${o.courier ? ` · ${o.courier}` : ''}</p>` : ''}
           </div>
 
           <div class="mt-4">

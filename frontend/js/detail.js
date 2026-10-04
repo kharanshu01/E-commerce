@@ -1,5 +1,6 @@
 // Product detail page.
 (async function () {
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
   const id = window.qs('id');
   const container = document.getElementById('detail-container');
   if (!id) { container.innerHTML = '<div class="empty-state"><h4>No product specified.</h4></div>'; return; }
@@ -10,6 +11,7 @@
     document.title = `${p.name} — FashionHub`;
 
     const inStock = p.countInStock > 0;
+    const galleryImages = [...new Set([p.image, ...(p.images || [])].filter(Boolean))];
     container.innerHTML = `
       <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb bg-transparent px-0">
@@ -22,8 +24,9 @@
         <div class="col-lg-6 mb-4">
           <div class="detail-hero">
             <div class="detail-badge">${p.category}</div>
-            <img src="${p.image}" alt="${p.name}">
+            <img id="detail-main-image" src="${galleryImages[0] || p.image}" alt="${p.name}">
           </div>
+          ${galleryImages.length > 1 ? `<div class="d-flex flex-wrap mt-3" role="group" aria-label="Product images">${galleryImages.map((image, index) => `<button type="button" class="btn btn-light p-1 mr-2 mb-2 gallery-thumb${index === 0 ? ' active' : ''}" data-image="${image}" aria-label="View product image ${index + 1}" aria-pressed="${index === 0}"><img src="${image}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px"></button>`).join('')}</div>` : ''}
         </div>
         <div class="col-lg-6">
           <div class="detail-panel">
@@ -64,6 +67,25 @@
         </div>
       </div>`;
 
+    try {
+      const viewed = JSON.parse(localStorage.getItem('fh_recently_viewed') || '[]').filter((item) => item._id !== String(p._id));
+      viewed.unshift({ _id: String(p._id), name: p.name, image: p.image, category: p.category, price: p.price, rating: p.rating, numReviews: p.numReviews, countInStock: p.countInStock });
+      localStorage.setItem('fh_recently_viewed', JSON.stringify(viewed.slice(0, 8)));
+      const recent = viewed.filter((item) => item._id !== String(p._id)).slice(0, 4);
+      if (recent.length) {
+        document.getElementById('recently-viewed-wrap').style.display = 'block';
+        window.Render.renderProducts(document.getElementById('recently-viewed-grid'), recent);
+      }
+    } catch {}
+
+    document.querySelectorAll('.gallery-thumb').forEach((button) => button.addEventListener('click', () => {
+      document.getElementById('detail-main-image').src = button.dataset.image;
+      document.querySelectorAll('.gallery-thumb').forEach((thumb) => {
+        thumb.classList.toggle('active', thumb === button);
+        thumb.setAttribute('aria-pressed', String(thumb === button));
+      });
+    }));
+
     const qtyEl = document.getElementById('qty');
     const clamp = () => { let v = parseInt(qtyEl.value) || 1; v = Math.max(1, Math.min(v, p.countInStock || 1)); qtyEl.value = v; return v; };
     document.getElementById('inc').onclick = () => { qtyEl.value = clamp() + 1; clamp(); };
@@ -80,10 +102,16 @@
         window.toast(err.status === 401 ? 'Please sign in to save products.' : err.message, 'error');
       }
     };
+    try {
+      const wishlist = await window.API.get('/auth/wishlist', true);
+      if (wishlist.some((item) => String(item._id) === String(p._id))) {
+        document.getElementById('wishlist-btn').innerHTML = '<i class="fas fa-heart text-danger"></i>';
+      }
+    } catch {}
 
     const reviewsEl = document.getElementById('reviews-list');
     reviewsEl.innerHTML = reviews.length
-      ? reviews.map((review) => `<article class="review-item mb-3"><strong>${review.user?.name || 'Customer'}</strong> <span class="product-ratting ml-2">${window.Render.stars(review.rating)}</span>${review.verifiedPurchase ? '<span class="badge badge-success ml-2">Verified purchase</span>' : ''}<h6 class="mt-2 mb-1">${review.title || 'Customer review'}</h6><p class="mb-0 text-muted">${review.comment}</p></article>`).join('')
+      ? reviews.map((review) => `<article class="review-item mb-3"><strong>${escapeHtml(review.user?.name || 'Customer')}</strong> <span class="product-ratting ml-2">${window.Render.stars(review.rating)}</span>${review.verifiedPurchase ? '<span class="badge badge-success ml-2">Verified purchase</span>' : ''}<h6 class="mt-2 mb-1">${escapeHtml(review.title || 'Customer review')}</h6><p class="mb-0 text-muted">${escapeHtml(review.comment)}</p></article>`).join('')
       : '<div class="empty-state"><i class="far fa-comment-dots"></i><h4>No reviews yet</h4><p>Be the first customer to review this product.</p></div>';
     const reviewForm = document.getElementById('review-form');
     if (window.Auth.currentUser && window.Auth.currentUser()) reviewForm.style.display = 'block';

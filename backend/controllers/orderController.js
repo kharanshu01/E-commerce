@@ -2,33 +2,59 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
 const asyncHandler = require('../middleware/asyncHandler');
-
-const TAX_RATE = 0.05; // 5% demo VAT
-const FREE_SHIP_THRESHOLD = 500;
-const SHIP_FLAT = 40;
+const sendOrderConfirmation = require('../utils/mailer');
+const { calculateOrderTotals } = require('../utils/orderPricing');
 
 /**
  * Recompute totals on the server from real product prices so the client
  * cannot tamper with the amount charged.
  */
 async function buildOrderItems(clientItems) {
+  if (!Array.isArray(clientItems) || clientItems.length === 0 || clientItems.length > 50) return [];
   const ids = clientItems.map((i) => i.product);
   const products = await Product.find({ _id: { $in: ids } });
   const map = new Map(products.map((p) => [String(p._id), p]));
-
-  const items = [];
+  const quantities = new Map();
   for (const ci of clientItems) {
-    const p = map.get(String(ci.product));
-    if (!p) continue;
-    const qty = Math.max(1, parseInt(ci.qty) || 1);
-    items.push({ product: p._id, name: p.name, image: p.image, price: p.price, qty });
+    const id = String(ci.product || '');
+    const qty = Number.parseInt(ci.qty, 10);
+    if (!map.has(id) || !Number.isInteger(qty) || qty < 1 || qty > 20) return [];
+    quantities.set(id, (quantities.get(id) || 0) + qty);
   }
-  return items;
+  if ([...quantities.values()].some((qty) => qty > 20)) return [];
+  return [...quantities].map(([id, qty]) => {
+    const product = map.get(id);
+    return { product: product._id, name: product.name, image: product.image, price: product.price, qty };
+  });
+}
+
+async function decreaseStock(items) {
+  const changed = [];
+  for (const item of items) {
+    const product = await Product.findOneAndUpdate(
+      { _id: item.product, countInStock: { $gte: item.qty } },
+      { $inc: { countInStock: -item.qty } },
+      { new: true }
+    );
+    if (!product) {
+      await Promise.all(changed.map(({ product: productId, qty }) => Product.updateOne({ _id: productId }, { $inc: { countInStock: qty } })));
+      return false;
+    }
+    changed.push(item);
+  }
+  return true;
 }
 
 // POST /api/orders   (protected) — create order (simulated payment)
 exports.createOrder = asyncHandler(async (req, res) => {
   const { items: clientItems, shipping, paymentMethod = 'Cash on Delivery', couponCode } = req.body;
+  if (paymentMethod !== 'Cash on Delivery') {
+    return res.status(400).json({ message: 'Online payment must be completed through the configured payment gateway.' });
+  }
+  const requiredShippingFields = ['firstName', 'lastName', 'phone', 'email', 'address1', 'city', 'postcode', 'country'];
+  if (!shipping || !requiredShippingFields.every((field) => typeof shipping[field] === 'string' && shipping[field].trim())) {
+    return res.status(400).json({ message: 'Please provide complete shipping details.' });
+  }
   if (!Array.isArray(clientItems) || clientItems.length === 0) {
     return res.status(400).json({ message: 'Your cart is empty.' });
   }
@@ -36,51 +62,43 @@ exports.createOrder = asyncHandler(async (req, res) => {
   const items = await buildOrderItems(clientItems);
   if (items.length === 0) return res.status(400).json({ message: 'No valid products in cart.' });
 
-  const stockResult = await Product.bulkWrite(items.map((item) => ({
-    updateOne: {
-      filter: { _id: item.product, countInStock: { $gte: item.qty } },
-      update: { $inc: { countInStock: -item.qty } },
-    },
-  })));
-  if (stockResult.modifiedCount !== items.length) {
+  let coupon = null;
+  let appliedCoupon = '';
+  if (couponCode) {
+    coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true, expiresAt: { $gt: new Date() } });
+    if (!coupon) return res.status(400).json({ message: 'Coupon is invalid or expired.' });
+    if (items.reduce((sum, item) => sum + item.price * item.qty, 0) < coupon.minOrderValue) return res.status(400).json({ message: `This coupon requires a minimum order of ₹${coupon.minOrderValue}.` });
+    appliedCoupon = coupon.code;
+  }
+  const totals = calculateOrderTotals(items, coupon);
+
+  if (!(await decreaseStock(items))) {
     return res.status(409).json({ message: 'One or more products are no longer available in the requested quantity.' });
   }
 
-  const itemsPrice = items.reduce((s, i) => s + i.price * i.qty, 0);
-  let discountPrice = 0;
-  let appliedCoupon = '';
-  if (couponCode) {
-    const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true, expiresAt: { $gt: new Date() } });
-    if (!coupon) return res.status(400).json({ message: 'Coupon is invalid or expired.' });
-    if (itemsPrice < coupon.minOrderValue) return res.status(400).json({ message: `This coupon requires a minimum order of ₹${coupon.minOrderValue}.` });
-    discountPrice = Math.round(itemsPrice * coupon.discountPercent / 100 * 100) / 100;
-    appliedCoupon = coupon.code;
-  }
-  const taxPrice = Math.round(itemsPrice * TAX_RATE * 100) / 100;
-  const shippingPrice = itemsPrice >= FREE_SHIP_THRESHOLD ? 0 : SHIP_FLAT;
-  const totalPrice = Math.round((itemsPrice - discountPrice + taxPrice + shippingPrice) * 100) / 100;
-
-  const order = await Order.create({
+  let order;
+  try {
+    order = await Order.create({
     user: req.user._id,
     items,
     shipping: shipping || {},
-    itemsPrice,
-    taxPrice,
-    shippingPrice,
-    totalPrice,
-    discountPrice,
+    ...totals,
     couponCode: appliedCoupon,
     paymentMethod,
-    isPaid: paymentMethod !== 'Cash on Delivery',
-    paymentStatus: paymentMethod === 'Cash on Delivery' ? 'Pending' : 'Paid',
-    paidAt: paymentMethod === 'Cash on Delivery' ? undefined : new Date(),
-    transactionId: paymentMethod === 'Cash on Delivery' ? '' : `DEMO-${Date.now()}`,
-    status: paymentMethod === 'Cash on Delivery' ? 'Pending' : 'Processing',
-  });
+    isPaid: false,
+    paymentStatus: 'Pending',
+    transactionId: '',
+    status: 'Pending',
+    });
+  } catch (error) {
+    await Promise.all(items.map((item) => Product.updateOne({ _id: item.product }, { $inc: { countInStock: item.qty } })));
+    throw error;
+  }
 
   // Clear the user's server-side cart after a successful order.
   req.user.cart = [];
   await req.user.save();
+  await sendOrderConfirmation(order);
 
   res.status(201).json(order);
 });
@@ -111,26 +129,49 @@ exports.getAllOrders = asyncHandler(async (req, res) => {
 // PUT /api/orders/:id/status   (admin)
 exports.updateStatus = asyncHandler(async (req, res) => {
   const { status, trackingNumber, courier } = req.body;
-  const order = await Order.findById(req.params.id);
-  if (!order) return res.status(404).json({ message: 'Order not found.' });
-  order.status = status || order.status;
-  if (trackingNumber !== undefined) order.trackingNumber = trackingNumber;
-  if (courier !== undefined) order.courier = courier;
-  if (order.status === 'Delivered' && !order.deliveredAt) order.deliveredAt = new Date();
-  await order.save();
+  const allowedStatuses = ['Pending', 'Processing', 'Shipped', 'OutForDelivery', 'Delivered', 'Cancelled', 'Returned', 'Refunded'];
+  if (status !== undefined && !allowedStatuses.includes(status)) return res.status(400).json({ message: 'Order status is invalid.' });
+  const existingOrder = await Order.findById(req.params.id);
+  if (!existingOrder) return res.status(404).json({ message: 'Order not found.' });
+  const previousStatus = existingOrder.status;
+  if (status === 'Refunded' && previousStatus !== 'Refunded') return res.status(400).json({ message: 'Use the payment refund action to refund a paid order.' });
+  if (status === 'Cancelled' && existingOrder.isPaid && existingOrder.paymentStatus !== 'Refunded') {
+    return res.status(409).json({ message: 'Refund the captured payment before cancelling this order.' });
+  }
+  const changes = {};
+  if (status !== undefined) changes.status = status;
+  if (trackingNumber !== undefined) changes.trackingNumber = trackingNumber;
+  if (courier !== undefined) changes.courier = courier;
+  if ((status || previousStatus) === 'Delivered' && !existingOrder.deliveredAt) changes.deliveredAt = new Date();
+  const order = await Order.findOneAndUpdate(
+    { _id: existingOrder._id, status: previousStatus },
+    { $set: changes },
+    { new: true, runValidators: true }
+  );
+  if (!order) return res.status(409).json({ message: 'Order changed while you were updating it. Refresh and try again.' });
+  if (previousStatus !== 'Cancelled' && order.status === 'Cancelled') {
+    await Product.bulkWrite(order.items.map((item) => ({
+      updateOne: { filter: { _id: item.product }, update: { $inc: { countInStock: item.qty } } },
+    })));
+  }
+  if (order.status !== previousStatus) await sendOrderConfirmation(order, true);
   res.json(order);
 });
 
 exports.cancelOrder = asyncHandler(async (req, res) => {
-  const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
-  if (!order) return res.status(404).json({ message: 'Order not found.' });
-  if (!['Pending', 'Processing'].includes(order.status)) {
+  const order = await Order.findOneAndUpdate(
+    { _id: req.params.id, user: req.user._id, isPaid: false, status: { $in: ['Pending', 'Processing'] } },
+    { $set: { status: 'Cancelled' } },
+    { new: true }
+  );
+  if (!order) {
+    const existing = await Order.exists({ _id: req.params.id, user: req.user._id });
+    if (!existing) return res.status(404).json({ message: 'Order not found.' });
     return res.status(409).json({ message: 'This order can no longer be cancelled.' });
   }
-  order.status = 'Cancelled';
-  await order.save();
   await Product.bulkWrite(order.items.map((item) => ({
     updateOne: { filter: { _id: item.product }, update: { $inc: { countInStock: item.qty } } },
   })));
+  await sendOrderConfirmation(order, true);
   res.json(order);
 });

@@ -9,7 +9,13 @@ const {
   updateStatus,
   cancelOrder,
 } = require('../controllers/orderController');
+const { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, markRazorpayPaymentFailed, refundPayment } = require('../controllers/paymentController');
 
+router.get('/payment-config', getPaymentConfig);
+router.post('/razorpay/order', protect, createRazorpayOrder);
+router.post('/razorpay/verify', protect, verifyRazorpayPayment);
+router.post('/razorpay/failed', protect, markRazorpayPaymentFailed);
+router.post('/:id/refund', protect, admin, refundPayment);
 router.post('/', protect, createOrder);
 router.get('/mine', protect, getMyOrders);
 router.get('/', protect, admin, getAllOrders);

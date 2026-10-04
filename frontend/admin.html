@@ -20,11 +20,22 @@
       </div>
       <div id="admin-error"></div>
       <div class="row mb-4" id="admin-stats"></div>
-      <div class="order-summary mb-4"><h5>Recent Orders</h5><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="admin-orders"></tbody></table></div></div>
+      <div class="order-summary mb-4"><h5>Orders &amp; Fulfillment</h5><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Courier</th><th>Tracking number</th><th>Actions</th></tr></thead><tbody id="admin-orders"></tbody></table></div></div>
       <div class="row">
         <div class="col-lg-7 mb-4"><div class="order-summary h-100"><h5>Registered Customers</h5><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead><tbody id="admin-users"></tbody></table></div></div></div>
-        <div class="col-lg-5 mb-4"><div class="order-summary h-100"><h5>Inventory</h5><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Product</th><th>Stock</th><th>Price</th></tr></thead><tbody id="admin-products"></tbody></table></div></div></div>
+        <div class="col-lg-5 mb-4"><div class="order-summary h-100"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0">Inventory</h5><button id="bulk-stock-save" class="btn btn-sm btn-primary">Save selected stock</button></div><div class="table-responsive"><table class="table table-hover"><thead><tr><th><input id="select-all-stock" type="checkbox" aria-label="Select all products"></th><th>Product</th><th>Stock</th><th>Save</th><th>Price</th></tr></thead><tbody id="admin-products"></tbody></table></div></div></div>
       </div>
+      <section class="order-summary mb-4">
+        <h5>Coupon management</h5>
+        <form id="coupon-form" class="form-row align-items-end mb-4">
+          <div class="form-group col-md-3"><label for="coupon-code">Code</label><input id="coupon-code" class="form-control" maxlength="30" required></div>
+          <div class="form-group col-md-2"><label for="coupon-discount">Discount %</label><input id="coupon-discount" type="number" class="form-control" min="1" max="100" required></div>
+          <div class="form-group col-md-2"><label for="coupon-minimum">Minimum ₹</label><input id="coupon-minimum" type="number" class="form-control" min="0" value="0" required></div>
+          <div class="form-group col-md-3"><label for="coupon-expiry">Expires</label><input id="coupon-expiry" type="datetime-local" class="form-control" required></div>
+          <div class="form-group col-md-2"><button class="btn btn-primary btn-block" type="submit">Create coupon</button></div>
+        </form>
+        <div class="table-responsive"><table class="table table-hover"><thead><tr><th>Code</th><th>Discount</th><th>Minimum</th><th>Expires</th><th>State</th><th>Actions</th></tr></thead><tbody id="admin-coupons"></tbody></table></div>
+      </section>
     </div>
   </main>
   <div id="site-footer"></div>
@@ -36,6 +47,7 @@
   <script src="js/cart.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/layout.js"></script>
+  <script src="js/render.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

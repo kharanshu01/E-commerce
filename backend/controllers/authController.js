@@ -4,6 +4,7 @@ const User = require('../models/User');
 const asyncHandler = require('../middleware/asyncHandler');
 
 const googleClient = new OAuth2Client();
+const authCookieOptions = { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 3600 * 1000 };
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
@@ -18,8 +19,11 @@ const sanitize = (user) => ({
 // POST /api/auth/register
 exports.register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
-  if (!name || !email || !password) {
+  if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string' || !name.trim() || !email.trim() || !password) {
     return res.status(400).json({ message: 'Name, email and password are required.' });
+  }
+  if (name.trim().length > 100 || email.trim().length > 254 || !/^\S+@\S+\.\S+$/.test(email.trim())) {
+    return res.status(400).json({ message: 'Please provide a valid name and email address.' });
   }
   if (password.length < 6) {
     return res.status(400).json({ message: 'Password must be at least 6 characters.' });
@@ -31,7 +35,7 @@ exports.register = asyncHandler(async (req, res) => {
   const user = await User.create({ name, email, password });
   const token = signToken(user._id);
   res
-    .cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 3600 * 1000 })
+    .cookie('token', token, authCookieOptions)
     .status(201)
     .json({ token, user: sanitize(user) });
 });
@@ -39,18 +43,18 @@ exports.register = asyncHandler(async (req, res) => {
 // POST /api/auth/login
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
+  if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
     return res.status(400).json({ message: 'Email and password are required.' });
   }
 
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password');
   if (!user || !user.password || !(await user.matchPassword(password))) {
     return res.status(401).json({ message: 'Invalid email or password.' });
   }
 
   const token = signToken(user._id);
   res
-    .cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 3600 * 1000 })
+    .cookie('token', token, authCookieOptions)
     .json({ token, user: sanitize(user) });
 });
 
@@ -103,13 +107,13 @@ exports.googleLogin = asyncHandler(async (req, res) => {
 
   const token = signToken(user._id);
   res
-    .cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 3600 * 1000 })
+    .cookie('token', token, authCookieOptions)
     .json({ token, user: sanitize(user) });
 });
 
 // POST /api/auth/logout
 exports.logout = asyncHandler(async (req, res) => {
-  res.clearCookie('token').json({ message: 'Logged out.' });
+  res.clearCookie('token', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' }).json({ message: 'Logged out.' });
 });
 
 // GET /api/auth/me   (protected)
