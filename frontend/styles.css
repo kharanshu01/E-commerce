@@ -387,6 +387,11 @@ a:hover { text-decoration: none; }
   box-shadow: var(--shadow-lg); padding: 2.5rem; animation: fadeUp 0.6s ease both;
 }
 .auth-card .brand { text-align: center; font-size: 1.8rem; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.google-auth { margin-top: 1.25rem; }
+.google-auth #google-signin-button { display: flex; justify-content: center; min-height: 40px; }
+.google-auth #google-auth-status:empty { display: none !important; }
+.auth-divider { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; color: var(--muted); font-size: 0.8rem; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
 
 /* ------------------------------- Cart ---------------------------------- */
 .cart-item { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1rem; margin-bottom: 1rem; transition: box-shadow var(--transition); }

@@ -28,7 +28,8 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
     },
-    password: { type: String, required: [true, 'Password is required'], minlength: 6, select: false },
+    password: { type: String, minlength: 6, select: false },
+    googleId: { type: String, unique: true, sparse: true, select: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     // Server-side persisted cart: [{ product, qty }]
     cart: [
@@ -45,13 +46,14 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving whenever it changes.
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
 userSchema.methods.matchPassword = function (entered) {
+  if (!this.password) return false;
   return bcrypt.compare(entered, this.password);
 };
 

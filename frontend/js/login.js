@@ -4,6 +4,11 @@
   const form = document.getElementById('login-form');
   const next = window.qs('next') || 'index.html';
 
+  window.Auth.initGoogleButton('google-signin-button', (user) => {
+    window.toast(`Welcome back, ${user.name.split(' ')[0]}!`, 'success');
+    setTimeout(() => (location.href = next), 500);
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submit-btn');

@@ -3,6 +3,11 @@
   if (window.Auth.currentUser()) { location.href = 'index.html'; return; }
   const form = document.getElementById('register-form');
 
+  window.Auth.initGoogleButton('google-signin-button', (user) => {
+    window.toast(`Welcome, ${user.name.split(' ')[0]}!`, 'success');
+    setTimeout(() => (location.href = window.qs('next') || 'index.html'), 500);
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (form.password.value !== form.confirm.value) {

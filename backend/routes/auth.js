@@ -4,6 +4,8 @@ const { protect, admin } = require('../middleware/auth');
 const {
   register,
   login,
+  googleConfig,
+  googleLogin,
   logout,
   me,
   getCart,
@@ -17,6 +19,8 @@ const {
 
 router.post('/register', register);
 router.post('/login', login);
+router.get('/google/config', googleConfig);
+router.post('/google', googleLogin);
 router.post('/logout', logout);
 router.get('/me', protect, me);
 router.get('/cart', protect, getCart);
